@@ -489,6 +489,30 @@ def test_nostrictio_contentsfmode():
     teardown_module()
 
 
+def test_recreated_file_permissions():
+    # a file recreated from a pickled handle must not be group/other
+    # accessible or executable
+    import platform
+    if os.name != 'posix' or platform.python_implementation() == 'PyPy':
+        return
+    pname = "_test_perms.txt"
+    old_umask = os.umask(0o022)  # a permissive umask exposes the missing mode
+    try:
+        f = open(pname, "w")
+        f.write("secret")
+        dumped = dill.dumps(f, fmode=dill.CONTENTS_FMODE)
+        f.close()
+        os.remove(pname)  # force recreation on load (the file-transfer case)
+        f2 = dill.loads(dumped)
+        f2.close()
+        bits = os.stat(pname).st_mode & 0o777
+        assert bits & 0o177 == 0, "recreated file is world-accessible: %o" % bits
+    finally:
+        os.umask(old_umask)
+        if os.path.exists(pname):
+            os.remove(pname)
+
+
 #bench(True, dill.HANDLE_FMODE, False)
 #bench(True, dill.FILE_FMODE, False)
 #bench(True, dill.CONTENTS_FMODE, True)
@@ -498,3 +522,4 @@ if __name__ == '__main__':
     test_nostrictio_handlefmode()
     test_nostrictio_filefmode()
     test_nostrictio_contentsfmode()
+    test_recreated_file_permissions()
