@@ -880,7 +880,7 @@ def _create_filehandle(name, mode, position, closed, open, strictio, fmode, fdat
                     flags |= os.O_RDWR
                 else:
                     flags |= os.O_WRONLY
-                f = os.fdopen(os.open(name, flags), mode)
+                f = os.fdopen(os.open(name, flags, 0o600), mode)
                 # set name to the correct value
                 r = getattr(f, "buffer", f)
                 r = getattr(r, "raw", r)
