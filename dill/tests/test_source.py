@@ -173,6 +173,32 @@ def test_safe():
   except SyntaxError:
     pass
 
+class Baz:
+  pass
+
+class Qux: # sits after Baz, so a pattern-like name resolves here instead
+  pass
+
+def test_name_not_a_pattern():
+  # __name__ is assignable and need not be an identifier, so it has to be
+  # matched literally rather than as part of the class-definition pattern
+  name = Baz.__name__
+  try:
+    Baz.__name__ = r'\w+' # otherwise matches the definition of Qux
+    try:
+      source = getsource(Baz)
+      assert False, source
+    except IOError:
+      pass
+    Baz.__name__ = 'Baz((' # otherwise fails to compile
+    try:
+      getsource(Baz)
+      assert False
+    except IOError:
+      pass
+  finally:
+    Baz.__name__ = name
+
 if __name__ == '__main__':
     test_getsource()
     test_itself()
@@ -184,3 +210,4 @@ if __name__ == '__main__':
     test_numpy()
     test_foo()
     test_safe()
+    test_name_not_a_pattern()
