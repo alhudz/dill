@@ -28,6 +28,12 @@ _foo = Foo()
 def add(x,y):
   return x+y
 
+def _enclose(f):
+  def _wrapper(x,y):
+    return f(x,y)
+  return _wrapper
+closured = _enclose(add)
+
 # yes, same as 'f', but things are tricky when it comes to pointers
 squared = lambda x:x**2
 
@@ -128,6 +134,12 @@ def test_importable():
   assert importable(100, builtin=True, source=False) == '100\n'
 
 
+def test_closured_import():
+  # closured functions take the pattern-matching path, where the enclosing
+  # and inner function names are matched literally against the source
+  assert importable(closured, source=False) == 'from %s import closured\n' % __name__
+
+
 def test_numpy():
   try:
     import numpy as np
@@ -207,6 +219,7 @@ if __name__ == '__main__':
     test_dynamic()
     test_classes()
     test_importable()
+    test_closured_import()
     test_numpy()
     test_foo()
     test_safe()
